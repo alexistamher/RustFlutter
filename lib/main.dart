@@ -1,9 +1,17 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:tasks_plugin/tasks_plugin.dart' as tasks_plugin;
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
+import 'package:tasks_plugin/tasks_plugin.dart';
 
-void main() {
-  tasks_plugin.RustLib.init();
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final appDir = await getApplicationDocumentsDirectory();
+  final dbPath = p.join(appDir.path, 'tasks.sqlite');
+
+  await RustLib.init();
+  await syncDb(dbPath: dbPath);
   runApp(const MainApp());
 }
 
@@ -26,31 +34,31 @@ class _CounterWidget extends StatefulWidget {
 }
 
 class _CounterWidgetState extends State<_CounterWidget> {
-  List<tasks_plugin.Task> tasks = [];
+  List<Task> tasks = [];
 
-  void getAllTasks() => Future.sync(() async {
-    tasks = await tasks_plugin.getAllTasks();
+  void _getAllTasks() => Future.sync(() async {
+    tasks = await getAllTasks();
     setState(() {
       tasks.sort((a, b) => a.id.compareTo(b.id));
     });
   });
 
-  void createTask() => Future.sync(() async {
+  void _createTask() => Future.sync(() async {
     final maxId = tasks.isEmpty ? 0 : tasks.map((task) => task.id).reduce(max);
-    await tasks_plugin.createTask(
+    await createTask(
       id: maxId + 1,
       title: 'Task ${maxId + 1}',
       description: 'Description ${maxId + 1}',
       completed: false,
     );
-    getAllTasks();
+    _getAllTasks();
   });
 
-  void updateTask(int id, bool completed) => Future.sync(() async {
+  void _updateTask(int id, bool completed) => Future.sync(() async {
     final task = await tasks
         .firstWhere((task) => task.id == id)
         .copyWith(completed: completed);
-    await tasks_plugin.updateTask(
+    await updateTask(
       id: id,
       title: task.title,
       description: task.description,
@@ -62,8 +70,8 @@ class _CounterWidgetState extends State<_CounterWidget> {
     });
   });
 
-  void deleteTask(int id) => Future.sync(() async {
-    await tasks_plugin.deleteTask(id: id);
+  void _deleteTask(int id) => Future.sync(() async {
+    await deleteTask(id: id);
     setState(() {
       tasks.removeWhere((task) => task.id == id);
     });
@@ -72,14 +80,14 @@ class _CounterWidgetState extends State<_CounterWidget> {
   @override
   void initState() {
     super.initState();
-    getAllTasks();
+    _getAllTasks();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        onPressed: createTask,
+        onPressed: _createTask,
         child: const Icon(Icons.add),
       ),
       body: ListView.builder(
@@ -92,7 +100,7 @@ class _CounterWidgetState extends State<_CounterWidget> {
                 title: Text(task.title),
                 subtitle: Text(task.description),
                 trailing: IconButton(
-                  onPressed: () => deleteTask(task.id),
+                  onPressed: () => _deleteTask(task.id),
                   icon: Icon(Icons.delete),
                 ),
               ),
@@ -121,7 +129,8 @@ class _CounterWidgetState extends State<_CounterWidget> {
                             Text('Complete'),
                             Checkbox(
                               value: task.completed,
-                              onChanged: (value) => updateTask(task.id, value!),
+                              onChanged: (value) =>
+                                  _updateTask(task.id, value!),
                             ),
                           ],
                         ),

@@ -5,9 +5,13 @@
 
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+import 'tasks_lib/domain/models.dart';
 
 String greet({required String name}) =>
     RustLib.instance.api.crateApiSimpleGreet(name: name);
+
+Future<void> syncDb({required String dbPath}) =>
+    RustLib.instance.api.crateApiSimpleSyncDb(dbPath: dbPath);
 
 Future<List<Task>> getAllTasks() =>
     RustLib.instance.api.crateApiSimpleGetAllTasks();
@@ -38,50 +42,3 @@ Future<void> updateTask({
   description: description,
   completed: completed,
 );
-
-class Task {
-  final int id;
-  final String title;
-  final String description;
-  final bool completed;
-
-  const Task({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.completed,
-  });
-
-  Future<Task> copyWith({required bool completed}) => RustLib.instance.api
-      .crateApiSimpleTaskCopyWith(that: this, completed: completed);
-
-  // HINT: Make it `#[frb(sync)]` to let it become the default constructor of Dart class.
-  static Future<Task> newInstance({
-    required int id,
-    required String title,
-    required String description,
-    required bool completed,
-  }) => RustLib.instance.api.crateApiSimpleTaskNew(
-    id: id,
-    title: title,
-    description: description,
-    completed: completed,
-  );
-
-  Future<String> toJson() =>
-      RustLib.instance.api.crateApiSimpleTaskToJson(that: this);
-
-  @override
-  int get hashCode =>
-      id.hashCode ^ title.hashCode ^ description.hashCode ^ completed.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Task &&
-          runtimeType == other.runtimeType &&
-          id == other.id &&
-          title == other.title &&
-          description == other.description &&
-          completed == other.completed;
-}

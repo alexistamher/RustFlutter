@@ -4,6 +4,7 @@
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
 import 'api/simple.dart';
+import 'api/tasks_lib/domain/models.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
@@ -66,7 +67,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => 546292070;
+  int get rustContentHash => -899440626;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -92,19 +93,21 @@ abstract class RustLibApi extends BaseApi {
 
   Future<void> crateApiSimpleInitApp();
 
-  Future<Task> crateApiSimpleTaskCopyWith({
+  Future<void> crateApiSimpleSyncDb({required String dbPath});
+
+  Future<Task> crateApiTasksLibDomainModelsTaskCopyWith({
     required Task that,
     required bool completed,
   });
 
-  Future<Task> crateApiSimpleTaskNew({
+  Task crateApiTasksLibDomainModelsTaskNew({
     required int id,
     required String title,
     required String description,
     required bool completed,
   });
 
-  Future<String> crateApiSimpleTaskToJson({required Task that});
+  Future<String> crateApiTasksLibDomainModelsTaskToJson({required Task that});
 
   Future<void> crateApiSimpleUpdateTask({
     required int id,
@@ -266,7 +269,35 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "init_app", argNames: []);
 
   @override
-  Future<Task> crateApiSimpleTaskCopyWith({
+  Future<void> crateApiSimpleSyncDb({required String dbPath}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(dbPath, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 6,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateApiSimpleSyncDbConstMeta,
+        argValues: [dbPath],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiSimpleSyncDbConstMeta =>
+      const TaskConstMeta(debugName: "sync_db", argNames: ["dbPath"]);
+
+  @override
+  Future<Task> crateApiTasksLibDomainModelsTaskCopyWith({
     required Task that,
     required bool completed,
   }) {
@@ -279,44 +310,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 6,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_task,
-          decodeErrorData: null,
-        ),
-        constMeta: kCrateApiSimpleTaskCopyWithConstMeta,
-        argValues: [that, completed],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateApiSimpleTaskCopyWithConstMeta => const TaskConstMeta(
-    debugName: "task_copy_with(dart_style=copyWith)",
-    argNames: ["that", "completed"],
-  );
-
-  @override
-  Future<Task> crateApiSimpleTaskNew({
-    required int id,
-    required String title,
-    required String description,
-    required bool completed,
-  }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_i_32(id, serializer);
-          sse_encode_String(title, serializer);
-          sse_encode_String(description, serializer);
-          sse_encode_bool(completed, serializer);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
             funcId: 7,
             port: port_,
           );
@@ -325,20 +318,55 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_task,
           decodeErrorData: null,
         ),
-        constMeta: kCrateApiSimpleTaskNewConstMeta,
+        constMeta: kCrateApiTasksLibDomainModelsTaskCopyWithConstMeta,
+        argValues: [that, completed],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiTasksLibDomainModelsTaskCopyWithConstMeta =>
+      const TaskConstMeta(
+        debugName: "task_copy_with(dart_style=copyWith)",
+        argNames: ["that", "completed"],
+      );
+
+  @override
+  Task crateApiTasksLibDomainModelsTaskNew({
+    required int id,
+    required String title,
+    required String description,
+    required bool completed,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_i_32(id, serializer);
+          sse_encode_String(title, serializer);
+          sse_encode_String(description, serializer);
+          sse_encode_bool(completed, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 8)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_task,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiTasksLibDomainModelsTaskNewConstMeta,
         argValues: [id, title, description, completed],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiSimpleTaskNewConstMeta => const TaskConstMeta(
-    debugName: "task_new",
-    argNames: ["id", "title", "description", "completed"],
-  );
+  TaskConstMeta get kCrateApiTasksLibDomainModelsTaskNewConstMeta =>
+      const TaskConstMeta(
+        debugName: "task_new",
+        argNames: ["id", "title", "description", "completed"],
+      );
 
   @override
-  Future<String> crateApiSimpleTaskToJson({required Task that}) {
+  Future<String> crateApiTasksLibDomainModelsTaskToJson({required Task that}) {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
@@ -347,7 +375,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 8,
+            funcId: 9,
             port: port_,
           );
         },
@@ -355,17 +383,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_String,
           decodeErrorData: null,
         ),
-        constMeta: kCrateApiSimpleTaskToJsonConstMeta,
+        constMeta: kCrateApiTasksLibDomainModelsTaskToJsonConstMeta,
         argValues: [that],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiSimpleTaskToJsonConstMeta => const TaskConstMeta(
-    debugName: "task_to_json(dart_style=toJson)",
-    argNames: ["that"],
-  );
+  TaskConstMeta get kCrateApiTasksLibDomainModelsTaskToJsonConstMeta =>
+      const TaskConstMeta(
+        debugName: "task_to_json(dart_style=toJson)",
+        argNames: ["that"],
+      );
 
   @override
   Future<void> crateApiSimpleUpdateTask({
@@ -385,7 +414,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 9,
+            funcId: 10,
             port: port_,
           );
         },
@@ -453,7 +482,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     final arr = raw as List<dynamic>;
     if (arr.length != 4)
       throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
-    return Task(
+    return Task.raw(
       id: dco_decode_i_32(arr[0]),
       title: dco_decode_String(arr[1]),
       description: dco_decode_String(arr[2]),
@@ -531,7 +560,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_title = sse_decode_String(deserializer);
     var var_description = sse_decode_String(deserializer);
     var var_completed = sse_decode_bool(deserializer);
-    return Task(
+    return Task.raw(
       id: var_id,
       title: var_title,
       description: var_description,
